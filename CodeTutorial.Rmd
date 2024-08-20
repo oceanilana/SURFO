@@ -1,0 +1,542 @@
+---
+title: "Oyster Farm Data and Analysis"
+author: "Ilana Jacobs"
+date: "2024-08-19"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Oyster Farm Data Tutorial
+
+This document is a tutorial for analyses for the Oyster Farm PRESS project. The following code and tutorial was written by Ilana Jacobs, 2024 SURFO in Hongjie Wang Ocean Carbon Lab.
+
+## General Helpful Practices when using R
+
+The first thing that you generally want to do when you start using R is set your working directory, as well as opening any packages you might need in the session.
+
+*It is a best practice to name files without any spaces, as well as keeping all files for a given project in the same folder. I prefer to save all of my files as .csv (comma separated) files because R (and other programming software) does well reading them.*
+
+## Monthly Oyster Report
+
+### Background Information
+
+BEFORE you start analysis in R, there are a few steps you need to do in excel. The file that is downloaded from HydroVu is an HTML file. You'll open it in Excel, and then save it as a CSV. The naming system I use is Oysters_Depth_MMDDYYYY.csv, and I save it to a folder for each month within my SURFO project folder called "OysterFarmMMYY", where I delete the top few rows on the file that have the GPS and location data. I convert the DateTime column into a date and a time column (add an extra column before using the text to column feature in excel!) I also rename all of the columns to make them more readable by R.
+
+## Starting R Analysis
+
+The packages I used for these analyses are ggplot2, ggpmisc, tidyverse, dplyr, and zoo.
+
+ggplot2: Grammar of Graphics, this is a package used for plotting/visualizing data.
+
+ggpmisc: an extension of ggplot2 that has added functions that can be helpful
+
+tidyverse: installs the tidyverse, which helps tidy messy data
+
+dplyr: Data manipulation (if we want to add rows, etc., it will make more sense later!)
+
+zoo: Z's Ordered Observations, used for analysis of regular and irregular time series
+
+if you have never used a package before, you need to install it. You only have to do this once when you first start using a package in R using `install.packages`.
+
+```{r Install_Packages}
+install.packages("ggplot2")
+install.packages("ggpmisc")
+install.packages("tidyverse")
+install.packaes("dplyr")
+install.packages("zoo")
+```
+
+We also need to load the packages into the project using `library` so we can use them. You'll have to do this for every new R project you use.
+
+```{r Initialize_Packages}
+library(ggplot2)
+library(ggpmisc)
+library(tidyverse)
+library(dplyr)
+library(zoo)
+```
+
+Now that we have our packages installed and loaded into the project, we can set the Working Directory using "`setwd`" to read the files. Rather than simply using the function read.csv, we create a variable that the function will save to. we can then recall the variable for further analyses.
+
+```{r Buoy_Upload}
+setwd("~/SURFO/OysterFarm0717")
+#open csv with data, but name the function first
+bottomjuly=read.csv("Oysters_Bottom_07172024.csv")
+surfacejuly=read.csv("Oysters_Surface_07172024.csv")
+```
+
+Sometimes, it is helpful to look at the structure of a file that we uploaded. Here is how you can do that.
+
+```{r Structre}
+str(bottomjuly)
+str(surfacejuly)
+```
+
+This structure we can see shows us the title of each column, as well as whether the data in that column is a character (chr) or numerical (num). This also is a good check to make sure that the file imported properly.
+
+We now want to add a datetime column. Yes, we got rid of this column in excel but we want a date, time and datetime column. So we will use a dplyr function to do this task.
+
+```{r add_datetime_column}
+# creates a datetime column using data from date and time column.
+bottomjuly1 <- bottomjuly %>%
+  mutate(datetime = as.POSIXct(paste(Date, Time), format = "%Y-%m-%d %H:%M:%S"))
+surfacejuly1 <- surfacejuly %>%
+  mutate(datetime = as.POSIXct(paste(Date, Time), format = "%Y-%m-%d %H:%M:%S"))
+```
+
+We will now find the mean, standard deviation, median and range of all of the measured parameters.
+
+#### Salinity
+
+```{r Salinity}
+#mean
+sal_mean_bottom=mean(bottomjuly$Salinity_ppt, na.rm=TRUE)
+sal_mean_surfacejuly=mean(surfacejuly$Salinity_ppt, na.rm=TRUE)
+
+#median
+sal_median_bottomjuly=median(bottomjuly$Salinity_ppt, na.rm=TRUE)
+sal_median_surfacejuly=median(surfacejuly$Salinity_ppt, na.rm=TRUE)
+
+#standard deviation
+sal_sd_bottomjuly=sd(bottomjuly$Salinity_ppt, na.rm=TRUE)
+sal_sd_surfacejuly=sd(surfacejuly$Salinity_ppt, na.rm=TRUE)
+
+#range
+sal_range_bottomjuly=range(bottomjuly$Salinity_ppt, na.rm=TRUE)
+sal_range_surfacejuly=range(surfacejuly$Salinity_ppt, na.rm=TRUE)
+```
+
+#### Dissolved Oxygen
+
+```{r Dissolved_Oxygen}
+#mean
+do_mean_bottomjuly=mean(bottomjuly$DO_mgl, na.rm=TRUE)
+do_mean_surfacejuly=mean(surfacejuly$DO_mgl, na.rm=TRUE)
+
+#median
+do_median_bottomjuly=median(bottomjuly$DO_mgl, na.rm=TRUE)
+do_median_surfacejuly=median(surfacejuly$DO_mgl, na.rm=TRUE)
+
+#standard deviation
+do_sd_bottomjuly=sd(bottomjuly$DO_mgl, na.rm=TRUE)
+do_sd_surfacejuly=sd(surfacejuly$DO_mgl, na.rm=TRUE)
+
+#range
+do_range_bottomjuly=range(bottomjuly$DO_mgl, na.rm=TRUE)
+do_range_surfacejuly=range(surfacejuly$DO_mgl, na.rm=TRUE)
+```
+
+#### pH
+
+```{r pH}
+#mean
+ph_mean_bottomjuly=mean(bottomjuly$pH, na.rm=TRUE)
+ph_mean_surfacejuly=mean(surfacejuly$pH, na.rm=TRUE)
+#median
+ph_median_bottomjuly=median(bottomjuly$pH, na.rm=TRUE)
+ph_median_surfacejuly=median(surfacejuly$pH, na.rm=TRUE)
+
+#standard deviation
+ph_sd_bottomjuly=sd(bottomjuly$pH, na.rm=TRUE)
+ph_sd_surfacejuly=sd(surfacejuly$pH, na.rm=TRUE)
+
+#range
+ph_range_bottomjuly=range(bottomjuly$pH, na.rm=TRUE)
+ph_range_surfacejuly=range(surfacejuly$pH, na.rm=TRUE)
+```
+
+#### Temperature
+
+```{r Temperature}
+#mean
+temp_mean_bottomjuly=mean(bottomjuly$Temperature_F, na.rm=TRUE)
+temp_mean_surfacejuly=mean(surfacejuly$Temperature_F, na.rm=TRUE)
+#median
+temp_median_bottomjuly=median(bottomjuly$Temperature_F, na.rm=TRUE)
+temp_median_surfacejuly=median(surfacejuly$Temperature_F, na.rm=TRUE)
+
+#standard deviation
+temp_sd_bottomjuly=sd(bottomjuly$Temperature_F, na.rm=TRUE)
+temp_sd_surfacejuly=sd(surfacejuly$Temperature_F, na.rm=TRUE)
+
+#range
+temp_range_bottomjuly=range(bottomjuly$Temperature_F, na.rm=TRUE)
+temp_range_surfacejuly=range(surfacejuly$Temperature_F, na.rm=TRUE)
+```
+
+## Moving Mean for Time Series
+
+Plotting a moving mean is an effective way to present a time series because it presents a smoother line, especially because so many time points are collected in this time series. To write code for a moving mean, we use the `zoo` package and a for loop.
+
+```{r moving_mean_loop}
+#we first specify which columns we want to process. 
+columns_to_process=c("Salinity_ppt", "DO_mgl", "pH", "Temperature_F", "Depth_m")
+#define the window size, which we for 12 hours will be 24, because there are recordings every 30 minutes. 
+window_size=24
+# Write a loop for Bottom Data: loop over each specified column, and calculate the moving mean
+for (column in columns_to_process) {
+  # Convert the column to a zoo object
+  zoo_df <- zoo(bottomjuly1[[column]], order.by = bottomjuly1$datetime)
+  
+  # Calculate the moving mean
+  moving_mean_12hr <- rollmean(zoo_df, k = window_size, fill = NA, align = "right")
+  
+  # Add the moving mean as a new column to the original data frame
+  new_column_name <- paste(column, "moving_mean_12hr", sep = "_")
+  bottomjuly1[[new_column_name]] <- coredata(moving_mean_12hr)
+}
+
+# Print the first few rows of the data frame to check the results
+print(head(bottomjuly1))
+
+```
+
+Now we can use the same For Loop for the surface data.
+
+```{r surface_for_loop}
+# Write a loop for Surface Data: loop over each specified column, and calculate the moving mean
+for (column in columns_to_process) {
+  # Convert the column to a zoo object
+  zoo_df <- zoo(surfacejuly1[[column]], order.by = surfacejuly1$datetime)
+  
+  # Calculate the moving mean
+  moving_mean_12hr <- rollmean(zoo_df, k = window_size, fill = NA, align = "right")
+  
+  # Add the moving mean as a new column to the original data frame
+  new_column_name <- paste(column, "moving_mean_12hr", sep = "_")
+  surfacejuly1[[new_column_name]] <- coredata(moving_mean_12hr)
+}
+
+# Print the first few rows of the data frame to check the results
+print(head(surfacejuly1))
+```
+
+## Plotting these Data
+
+Now that we have completed our analyses of the data, we can plot it. We'll use ggplot2 for these plots.
+
+```{r salinity_plots}
+salinity_june = ggplot()+
+  geom_line(data=bottomjuly1, aes(x = datetime, y = Salinity_ppt_moving_mean_12hr, color="Bottom"), na.rm = TRUE) +
+  geom_line(data=surfacejuly1, aes(x = datetime, y = Salinity_ppt_moving_mean_12hr, color="Surface")) +
+  scale_color_manual(name="Sensor", values = c("Bottom" = "purple4", "Surface" = "orange")) +
+  labs(title = paste("Salinity from June 17 to July 16 2024" ),x = "Date", y = "Salinity (ppt)") +
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+print(salinity_june)
+
+```
+
+```{r Dissolved_oxygen_plots}
+DO_June =ggplot() +
+  geom_line(data = bottomjuly1, aes(x = datetime, y = DO_mgl_moving_mean_12hr, color = "Bottom"), na.rm = TRUE) +
+  geom_line(data = surfacejuly1, aes(x = datetime, y = DO_mgl_moving_mean_12hr, color = "Surface"), na.rm = TRUE) +
+  scale_color_manual(name="Sensor", values = c("Bottom" = "purple4", "Surface" = "orange")) +
+  labs(title = "Dissolved Oxygen from June 17 to July 16 2024", x = "Date", y = "Dissolved Oxygen, mg/L") +
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+print(DO_June)
+```
+
+```{r pH_Plots}
+pH_June = ggplot()+
+  geom_line(data=bottomjuly1, aes(x = datetime, y = pH_moving_mean_12hr, color="Bottom")) +
+  geom_line(data=surfacejuly1, aes(x = datetime, y = pH_moving_mean_12hr, color="Surface")) +
+  scale_color_manual(name="Sensor", values = c("Bottom" = "purple4", "Surface" = "orange")) +
+  labs(title = paste("pH from June 17 to July 16 2024" ),x = "Date", y = "pH") +
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+print(pH_June)
+```
+
+```{r Temp_Plots}
+Temp_June = ggplot()+
+  geom_line(data=bottomjuly1, aes(x = datetime, y = Temperature_F_moving_mean_12hr, color="Bottom")) +
+  geom_line(data=surfacejuly1, aes(x = datetime, y = Temperature_F_moving_mean_12hr, color="Surface")) +
+  scale_color_manual(name="Sensor", values = c("Bottom" = "purple4", "Surface" = "orange")) +
+  labs(title = paste("Temperature from June 17 to July 16 2024" ),x = "Date", y = "Temperature, ºF") +
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+print(Temp_June)
+```
+
+# Analysis for CO2SYS
+
+The packages for this part of the analysis are the following:
+
+-   ggplot2
+
+-   dplyr
+
+-   gridExtra
+
+-   RColorBrewer
+
+-   lubridate
+
+Install new packages (`install.packages`) and open all (`library`).
+
+First thing we do for this is not in R. We will pull the files from Google Drive (.xlsx files) and save them as .csv's. Then we will use MatLab CO2SYS for the beginning of this analysis.
+
+AFTER you finish CO2SYS in Matlab, come back to this tutorial.
+
+```{r from_MatLab}
+# Bring in csv's from analyses in matlab
+setwd("~/SURFO/")
+bottom_co2sys=read.csv("Wickford_Oyster_Farm_Data_Bottom_CO2SYS.csv")
+surface_co2sys=read.csv("surface_co2sys.csv")
+```
+
+### Total Alkalinity vs Salinity
+
+```{r TA_Sal}
+ggplot(data = surface_co2sys, aes(x = IS_S, y = TA_umol_kg, fill = IS_T)) +
+  geom_point(size = 3, shape = 21, color = "black", position="jitter") +
+  scale_fill_gradientn(colours = heat.colors(10)) +
+  labs(fill = "IS_T") +
+  geom_smooth(method=lm, color="black", linetype="dashed")+
+  stat_poly_eq(aes(label = paste( ..rr.label..)),
+               formula = y ~ x,
+               parse = TRUE) +
+  theme_classic() +
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    plot.title = element_text(hjust = 0.5, face = "bold"))+
+  labs(title= "Surface Salinity vs TA")+
+  theme(legend.position = "right")
+```
+
+### Dissolved Inorganic Carbon vs Salinity
+
+```{r DIC_Sal}
+ggplot(data = surface_co2sys, aes(x = M_S, y = DIC_umol_kg, fill = IS_T)) +
+  geom_point(size = 3, shape = 21, color = "black", position="jitter") +
+  scale_fill_gradientn(colours = heat.colors(10)) +
+  labs(fill = "IS_T") +
+  geom_smooth(method=lm, color="black", linetype="dashed")+
+  stat_poly_eq(aes(label = paste( ..rr.label..)),
+               formula = y ~ x,
+               parse = TRUE) +
+  theme_classic() +
+  labs(title= "Surface Salinity vs DIC")+
+  theme(legend.position = "right")
+```
+
+Both of these are plots for the surface. Try plotting the bottom data on your own with this same format of code.
+
+## Now we will start analysis with the Pimenta dataset.
+
+We are looking for calification signaling (Negative TA and DIC anomaly).
+
+To do this,w e will use data from Pimenta et al., 2023, which studied carbonate chemistry in Narragansett Bay from 2017-2019, but not at/near oyster farms. This is good ambient data!
+
+Bring the Pimenta Data into R.
+
+```{r Pimenta_in}
+## Written by Hongjie Wang ##
+load("~/SURFO/PimentaEtAl2023.Rdata")
+Pimenta=PimentaEtAl2023_carb
+# Get the column names of your data frame (assuming df is your data frame)
+(column_names <- colnames(Pimenta))
+#Pimenta=Pimenta[,c(-2,-4,-9)]
+# Create a vector of new column names (replace with your desired names)
+new_column_names <- c("site", "datetime", "mydates",'Depth.m','depth','Salinity_ppt','Temp_C','DO_mg.L','DOpct','pH','DIC','TA')  # Add all new names
+colnames(Pimenta) <- new_column_names
+Pimenta$mydates=(as.Date(Pimenta$mydates))
+
+```
+
+#### Step 1: Fit models using Salinity and TA from the Pimenta (Narragansett Bay, Non Oyster Farm) Data. Store the coefficients from those models as independent variables. 
+
+```{r}
+# Fit models
+model_TA <- lm(TA ~ Salinity_ppt, data = Pimenta)
+model_DIC <- lm(DIC ~ Salinity_ppt, data = Pimenta)
+Coefficients_TA=coef(model_TA)
+Coefficients_DIC=coef(model_DIC)
+```
+
+#### Step 2: Predict TA and DIC based on Measured (in-situ) Salinity. Store these values as a new column in the dataframe.
+
+```{r}
+surface_co2sys$TA_predicted = Coefficients_TA[2]*surface_co2sys$IS_S+Coefficients_TA[1]
+surface_co2sys$DIC_predicted = Coefficients_DIC[2]*surface_co2sys$IS_S+Coefficients_DIC[1]
+bottom_co2sys$TA_predicted = Coefficients_TA[2]*bottom_co2sys$IS_S+Coefficients_TA[1]
+bottom_co2sys$DIC_predicted = Coefficients_DIC[2]*bottom_co2sys$IS_S+Coefficients_DIC[1]
+```
+
+#### Step 3: Calculate DeltaTA and DeltaDIC. Store these values as a new column in the dataframe.
+
+```{r}
+surface_co2sys$DeltaTA=(surface_co2sys$TA_umol_kg - surface_co2sys$TA_predicted)
+surface_co2sys$DeltaDIC=(surface_co2sys$DIC_umol_kg - surface_co2sys$DIC_predicted)
+bottom_co2sys$DeltaTA=(bottom_co2sys$TA_umol_kg - bottom_co2sys$TA_predicted)
+bottom_co2sys$DeltaDIC=(bottom_co2sys$DIC_umol_kg - bottom_co2sys$DIC_predicted)
+```
+
+#### Step 4: Plot the anomalies. 
+
+```{r}
+# Surface Plot #
+main_plot_surface <- ggplot(surface_co2sys, aes(x = DeltaDIC, y = DeltaTA, fill = IS_T)) +
+  geom_point(data = subset(surface_co2sys), shape=21, color="black", position="jitter", size=3) +
+  scale_fill_gradientn(colors=rev(brewer.pal(10, "RdBu")))+ 
+  labs(y = expression("TA anomaly (µmol kg"^-1*")"),
+       x = expression("DIC anomaly (µmol kg"^-1*")"),
+       color = "Temperature") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
+  geom_abline(slope = -17/106, intercept = 0, linetype = "dashed", color = "black") + 
+  geom_abline(slope = 2, intercept = 0, linetype = "dashed", color = "black") + 
+  xlim(-200, 200) +
+  ylim(-200, 200) +
+  theme_minimal(base_size = 10) + 
+  labs(title= "Surface Anomolies")+
+  
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+print(main_plot_surface)
+
+# Bottom Plot #
+main_plot_bottom <- ggplot(bottom_co2sys, aes(x = DeltaDIC, y = DeltaTA, fill = IS_T)) +
+  geom_point(data = subset(bottom_co2sys), shape=21, color="black", position="jitter", size=3) +
+  scale_fill_gradientn(colors=rev(brewer.pal(10, "RdBu")))+ 
+  labs(y = expression("TA anomaly (µmol kg"^-1*")"),
+       x = expression("DIC anomaly (µmol kg"^-1*")"),
+       colour = "Temperature") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") + 
+  geom_abline(slope = -17/106, intercept = 0, linetype = "dashed", color = "black") + 
+  geom_abline(slope = 2, intercept = 0, linetype = "dashed", color = "black") + 
+  xlim(-200, 200) +
+  ylim(-200, 200) +
+  theme_minimal(base_size = 10) +
+  labs(title= "Bottom Anomolies",)+
+  theme(
+    #panel.background = element_rect(fill = "white", color = "black"),
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+print(main_plot_bottom)
+```
+
+## Total Alkalinity Based CO2 Emission
+
+This analysis involves sending the data back to matlab running CO2SYS again. Once done re-running CO2SYS bring the data back into R using `read.csv`.
+
+```{r}
+surface_co2sys=read.csv("surface_co2sys.csv")
+```
+
+Then we will use a `dplyr` function to make a new column, called Date. From that, we will extract only the month, and the month will go into its own column. From that, we will subset values from the month of June for this analysis, they will be stored under a new variable name in their own dataframe.
+
+```{r}
+surface_co2sys=surface_co2sys %>%
+  mutate(Date = dmy(Date))
+surface_co2sys=surface_co2sys %>%
+  mutate(Month = month(Date, label = TRUE))
+
+# subset data for only the month of June (a warm month)
+surface_co2sys_june=subset(surface_co2sys,Month=='Jun')
+```
+
+From the new June only dataframe, we will calculate the following:
+
+```{r}
+surface_co2sys_june_mean_TApredicted=mean(surface_co2sys_june$TA_predicted, na.rm=T)
+surface_co2sys_june_mean_DICpredicted=mean(surface_co2sys_june$DIC_predicted, na.rm=T)
+surface_co2sys_june_mean_TAcalc=mean(surface_co2sys_june$TA_umol_kg, na.rm=T)
+surface_co2sys_june_mean_DICcalc=mean(surface_co2sys_june$DIC_umol_kg, na.rm=T)
+```
+
+We also calculate the mean temperature and salinity measured in the month of June.
+
+```{r}
+surface_co2sys_june_mean_T=mean(surface_co2sys_june$IS_T, na.rm=T)
+surface_co2sys_june_mean_S=mean(surface_co2sys_june$IS_S, na.rm=T)
+```
+
+Now, calculate the Delta TA and Delta DIC in June.
+
+```{r}
+DeltaTAjune=surface_co2sys %>%
+  filter(Month == "Jun") %>%
+  summarise(mean_DeltaTA = mean(DeltaTA, na.rm = T)) %>%
+  pull(mean_DeltaTA)
+print(DeltaTAjune)
+# DIC June 
+DeltaDICjune=surface_co2sys %>%
+  filter(Month == "Jun") %>%
+  summarise(mean_DeltaDIC = mean(DeltaDIC, na.rm = T)) %>%
+  pull(mean_DeltaDIC)
+print(DeltaDICjune)
+```
+
+Next, we will calculate TAcal for June. In this expression we will account for activity from phytoplankton respiration.
+
+```{r}
+TAcaljune=DeltaTAjune -(DeltaTAjune-2*DeltaDICjune)/(1+2*107/16)
+```
+
+### Now we use DeltaTAjune to create a variable called IntegratedTAjune  
+
+We make assumptions that there is a 1 month flush cycle in narragansett Bay (Pilson 1985) in the oyster farm that is 4.19 acres and has a mean depth of 6 meters.
+
+```{r}
+# Calculate Oyster Farm Volume
+acre_to_sq_meters = 4046.86 # 1 Acre is 4046.86 meters
+farm_area_acres = 4.19 
+mean_depth_meters = 6
+# From Pilson Paper- 10-40 day flushing period in NBay - Change to make the flushing factor different.
+# Here I use 1 as the flushing factor
+flushing_factor1=1
+# Weekly Flush
+flushing_factor4=4
+# Calculate the area in square meters
+farm_area_sq_meters = farm_area_acres * acre_to_sq_meters
+# Calculate the volume
+Volume_OF = farm_area_sq_meters * mean_depth_meters
+# Calculate the Integrated TA for June, Multiply by 4 because flush removes TA
+IntegratedTAjune=(TAcaljune*Volume_OF)*flushing_factor1
+```
+
+From this, we can calculate the Total CO2 Emissions from TA approach, assuming every 2 mol of TA removed relases 1 mol of CO2.
+
+```{r}
+CO2_Emissions_TAjune=1/2*IntegratedTAjune*0.6 # 0.6 is caused by buffer capacity change due to calcification (removal of TA)
+CO2_Emissions_TAgrowing=4*CO2_Emissions_TAjune
+# Convert moles into g of CO2 emitted, 44.01 g/mol
+CO2e_TAjune_g=-CO2_Emissions_TAgrowing*44.01
+CO2e_TAjune_g*374/4
+```
+
+This chunk of code is for comparing the mean predicted (from Pimenta) values and the calculated mean values of pco2 in the oyster farm.
+
+```{r}
+mean_pCO2predicted_june=surface_co2sys %>%
+  filter(Month == "Jun") %>%
+  summarise(mean_pCO2predicted_june = mean(pCO2predicted, na.rm = TRUE),sd_pCO2predicted_june = sd(pCO2predicted, na.rm = TRUE))
+print(mean_pCO2predicted_june)
+
+mean_pCO2calc_june=surface_co2sys %>%
+  filter(Month == "Jun") %>%
+  summarise(mean_pCO2calc_june = mean(pCO2calc, na.rm = TRUE),sd_pCO2calc_june = sd(pCO2calc, na.rm = TRUE))
+print(mean_pCO2calc_june)
+```
+
+#### Now we go back into MatLab and do calculations for Air-Sea CO2 flux method for the remainder of the analysis, so be sure to save the changes we made to this file. 
+
+```{r}
+write.csv(surface_co2sys,"~/SURFO/surface_co2sys.csv", row.names = TRUE)
+```
