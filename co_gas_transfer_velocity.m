@@ -1,3 +1,4 @@
+% From Wang Lab %
 function kt = co_gas_transfer_velocity(sst,wspd,c,unit)
 % kt = co_gas_transfer_velocity(sst,wspd,c,unit)
 % Calculate the gas transfer velocity from sst, sss, and wind speed
