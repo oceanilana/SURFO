@@ -1,3 +1,4 @@
+%From Wang Lab %
 function co2_flux = co_co2flux(pco2_sea, pco2_air, sst, sss, wspd)
 
 kt = co_gas_transfer_velocity(sst,wspd,0.251);
