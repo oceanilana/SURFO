@@ -817,3 +817,160 @@ ggplot() +
   labs(title = "New Bottom Sensor", x = "Dissolved Oxygen, mg/L", y = "pH") +
   theme_classic()+
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+# August Oyster Report ####
+# load in files
+setwd("/Users/ilanajacobs/SURFO/OysterFarm0817")
+#open csv with data, but name the function first
+bottomaug=read.csv("Oysters_Bottom_08172024.csv")
+surfaceaug=read.csv("Oysters_Surface_08172024.csv")
+# creating datetime column in the dataframe 
+bottomaug1 <- bottomaug %>%
+  mutate(datetime = as.POSIXct(paste(Date, Time), format = "%Y-%m-%d %H:%M:%S"))
+surfaceaug1 <- surfaceaug %>%
+  mutate(datetime = as.POSIXct(paste(Date, Time), format = "%Y-%m-%d %H:%M:%S"))
+
+#### 
+
+summary(bottomaug) # prints summary stats for entire dataframe
+
+# Salinity ####
+#mean
+sal_mean_bottomaug=mean(bottomaug$Salinity_ppt, na.rm=TRUE)
+sal_mean_surfaceaug=mean(surfaceaug$Salinity_ppt, na.rm=TRUE)
+
+
+#median
+sal_median_bottomaug=median(bottomaug$Salinity_ppt, na.rm=TRUE)
+sal_median_surfaceaug=median(surfaceaug$Salinity_ppt, na.rm=TRUE)
+
+#standard deviation
+sal_sd_bottomaug=sd(bottomaug$Salinity_ppt, na.rm=TRUE)
+sal_sd_surfaceaug=sd(surfaceaug$Salinity_ppt, na.rm=TRUE)
+
+#range
+sal_range_bottomjuly=range(bottomaug$Salinity_ppt, na.rm=TRUE)
+sal_range_surfacejuly=range(surfaceaug$Salinity_ppt, na.rm=TRUE)
+
+# DO ####
+#mean
+do_mean_bottomaug=mean(bottomaug$DO_mgl, na.rm=TRUE)
+do_mean_surfacejuly=mean(surfaceaug$DO_mgl, na.rm=TRUE)
+
+#median
+do_median_bottomaug=median(bottomaug$DO_mgl, na.rm=TRUE)
+do_median_surfacejuly=median(surfaceaug$DO_mgl, na.rm=TRUE)
+
+#standard deviation
+do_sd_bottomaug=sd(bottomaug$DO_mgl, na.rm=TRUE)
+do_sd_surfaceaug=sd(surfaceaug$DO_mgl, na.rm=TRUE)
+
+#range
+do_range_bottomjuly=range(bottomaug$DO_mgl, na.rm=TRUE) 
+do_range_surfacejuly=range(surfaceaug$DO_mgl, na.rm=TRUE)
+
+# pH ####
+#mean
+ph_mean_bottomaug=mean(bottomaug$pH, na.rm=TRUE)
+ph_mean_surfaceaug=mean(surfaceaug$pH, na.rm=TRUE)
+#median
+ph_median_bottomaug=median(bottomaug$pH, na.rm=TRUE)
+ph_median_surfaceaug=median(surfaceaug$pH, na.rm=TRUE)
+
+#standard deviation
+ph_sd_bottomaug=sd(bottomaug$pH, na.rm=TRUE)
+ph_sd_surfacejuly=sd(surfaceaug$pH, na.rm=TRUE)
+
+#range
+ph_range_bottomaug=range(bottomaug$pH, na.rm=TRUE)
+ph_range_surfaceaug=range(surfaceaug$pH, na.rm=TRUE)
+
+# Temperature ####
+#mean
+temp_mean_bottomaug=mean(bottomaug$Temperature_F, na.rm=TRUE)
+temp_mean_surfaceaug=mean(surfaceaug$Temperature_F, na.rm=TRUE)
+#median
+temp_median_bottomaug=median(bottomaug$Temperature_F, na.rm=TRUE)
+temp_median_surfaceaug=median(surfaceaug$Temperature_F, na.rm=TRUE)
+
+#standard deviation
+temp_sd_bottomaug=sd(bottomaug$Temperature_F, na.rm=TRUE)
+temp_sd_surfaceaug=sd(surfaceaug$Temperature_F, na.rm=TRUE)
+
+#range
+temp_range_bottomaug=range(bottomaug$Temperature_F, na.rm=TRUE)
+temp_range_surfaceaug=range(surfaceaug$Temperature_F, na.rm=TRUE)
+
+
+# Moving Mean using Zoo Pkg #### Same as in July report, but adapted for August data!
+# Writing a loop for a 12-hour moving mean 
+library(zoo)
+#we first specify which columns we want to process. 
+columns_to_process=c("Salinity_ppt", "DO_mgl", "pH", "Temperature_F", "Depth_m")
+#define the window size, which we for 12 hours will be 24, because there are recordings every 30 minutes
+window_size=24
+# Write a loop for Bottom Data: loop over each specified column, and calculate the moving mean
+for (column in columns_to_process) {
+  # Convert the column to a zoo object
+  zoo_df_aug <- zoo(bottomaug1[[column]], order.by = bottomaug1$datetime)
+  
+  # Calculate the moving mean
+  moving_mean_12hr <- rollmean(zoo_df_aug, k = window_size, fill = NA, align = "right")
+  
+  # Add the moving mean as a new column to the original data frame
+  new_column_name <- paste(column, "moving_mean_12hr", sep = "_")
+  bottomaug1[[new_column_name]] <- coredata(moving_mean_12hr)
+}
+
+# Print the first few rows of the data frame to check the results
+print(head(bottomaug1))
+
+# Write a loop for Surface Data: loop over each specified column, and calculate the moving mean
+for (column in columns_to_process) {
+  # Convert the column to a zoo object
+  zoo_df_aug <- zoo(surfaceaug1[[column]], order.by = surfaceaug1$datetime)
+  
+  # Calculate the moving mean
+  moving_mean_12hr <- rollmean(zoo_df_aug, k = window_size, fill = NA, align = "right")
+  
+  # Add the moving mean as a new column to the original data frame
+  new_column_name <- paste(column, "moving_mean_12hr", sep = "_")
+  surfaceaug1[[new_column_name]] <- coredata(moving_mean_12hr)
+}
+
+# Print the first few rows of the data frame to check the results
+print(head(surfaceaug1))
+
+# Plots for Report ####
+# Salinity 12#
+sal_aug=ggplot()+
+  geom_line(data=bottomaug1, aes(x = datetime, y = Salinity_ppt_moving_mean_12hr, color="Bottom"), na.rm = TRUE) +
+  geom_line(data=surfaceaug1, aes(x = datetime, y = Salinity_ppt_moving_mean_12hr, color="Surface"), na.rm = TRUE) +
+  scale_color_manual(name="Sensor", values = c("Bottom" = "purple4", "Surface" = "orange")) +
+  labs(title = paste("Salinity from July 17 to August 16 2024" ),x = "Date", y = "Salinity (ppt)") +
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+print(sal_aug)
+# Dissolved Oxyden 12#
+DO_aug=ggplot() +
+  geom_line(data = bottomaug1, aes(x = datetime, y = DO_mgl_moving_mean_12hr, color = "Bottom"), na.rm = TRUE) +
+  geom_line(data = surfaceaug1, aes(x = datetime, y = DO_mgl_moving_mean_12hr, color = "Surface"), na.rm = TRUE) +
+  scale_color_manual(name="Sensor", values = c("Bottom" = "purple4", "Surface" = "orange")) +
+  labs(title = "Dissolved Oxygen from July 17 to August 16 2024", x = "Date", y = "Dissolved Oxygen, mg/L") +
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+# pH 12#
+pH_aug = ggplot()+
+  geom_line(data=bottomaug1, aes(x = datetime, y = pH_moving_mean_12hr, color="Bottom")) +
+  geom_line(data=surfaceaug1, aes(x = datetime, y = pH_moving_mean_12hr, color="Surface")) +
+  scale_color_manual(name="Sensor", values = c("Bottom" = "purple4", "Surface" = "orange")) +
+  labs(title = paste("pH from July 17 to August 16 2024" ),x = "Date", y = "pH") +
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+# Temperature F 12#
+Temp_aug = ggplot()+
+  geom_line(data=bottomaug1, aes(x = datetime, y = Temperature_F_moving_mean_12hr, color="Bottom")) +
+  geom_line(data=surfaceaug1, aes(x = datetime, y = Temperature_F_moving_mean_12hr, color="Surface")) +
+  scale_color_manual(name="Sensor", values = c("Bottom" = "purple4", "Surface" = "orange")) +
+  labs(title = paste("Temperature from July 17 to August 16 2024" ),x = "Date", y = "Temperature, ºF") +
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
