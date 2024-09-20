@@ -17,7 +17,8 @@ library("ggplot2")
 library("ggpmisc")
 library("tidyverse")
 library("dplyr")
-#### Bottom Buoy Upload ####
+library("zoo")
+#### Bottom Buoy Upload ###hyd#
 #
 #open csv with data, but name the function first
 bottom=read.csv("oysters_bottom_061824.csv")
@@ -489,17 +490,17 @@ ggplot() +
   # Add barnacles data
   geom_point(data = barnacles, aes(x = DO_mgl, y = pH), position = "jitter", size = 0.5, color = "red") +
   geom_smooth(data = barnacles, aes(x = DO_mgl, y = pH), method = "lm", color = "red", se = FALSE) +
-  stat_poly_eq(data = barnacles, aes(x = DO_mgl, y = pH, label = ..rr.label.., sep = "~~~"), 
+  stat_poly_eq(data = barnacles, aes(x = DO_mgl, y = pH, label = ..rr.label..), 
                formula = y ~ x, parse = TRUE, color = "red") +
   # Add surface data before 
   geom_point(data = surface, aes(x = DO_mgl, y = pH), position = "jitter", size = 0.5, color = "blue") +
   geom_smooth(data = surface, aes(x = DO_mgl, y = pH), method = "lm", color = "blue", se = FALSE) +
-  stat_poly_eq(data = surface, aes(x = DO_mgl, y = pH, label = paste(..rr.label.., sep = "~~~")), 
+  stat_poly_eq(data = surface, aes(x = DO_mgl, y = pH, label = paste(..rr.label..)), 
                formula = y ~ x, parse = TRUE, color = "blue", label.x = 5, label.y = 8) +
   # add surface data after
   geom_point(data = cleaned, aes(x = DO_mgl, y = pH), position = "jitter", size = 0.5, color = "forestgreen") +
   geom_smooth(data = cleaned, aes(x = DO_mgl, y = pH), method = "lm", color = "forestgreen", se = FALSE) +
-  stat_poly_eq(data = cleaned, aes(x = DO_mgl, y = pH, label = paste(..rr.label.., sep = "~~~")), 
+  stat_poly_eq(data = cleaned, aes(x = DO_mgl, y = pH, label = paste(..rr.label..)), 
                formula = y ~ x, parse = TRUE, color = "forestgreen", label.x = -5, label.y = 8) +
   # Add labels and theme
   labs(title = "DO and pH correlation", x = "Dissolved Oxygen (mg/L)", y = "pH") +
@@ -848,13 +849,13 @@ sal_sd_bottomaug=sd(bottomaug$Salinity_ppt, na.rm=TRUE)
 sal_sd_surfaceaug=sd(surfaceaug$Salinity_ppt, na.rm=TRUE)
 
 #range
-sal_range_bottomjuly=range(bottomaug$Salinity_ppt, na.rm=TRUE)
-sal_range_surfacejuly=range(surfaceaug$Salinity_ppt, na.rm=TRUE)
+sal_range_bottomaug=range(bottomaug$Salinity_ppt, na.rm=TRUE)
+sal_range_surfaceaug=range(surfaceaug$Salinity_ppt, na.rm=TRUE)
 
 # DO ####
 #mean
 do_mean_bottomaug=mean(bottomaug$DO_mgl, na.rm=TRUE)
-do_mean_surfacejuly=mean(surfaceaug$DO_mgl, na.rm=TRUE)
+do_mean_surfaceaug=mean(surfaceaug$DO_mgl, na.rm=TRUE)
 
 #median
 do_median_bottomaug=median(bottomaug$DO_mgl, na.rm=TRUE)
@@ -865,8 +866,8 @@ do_sd_bottomaug=sd(bottomaug$DO_mgl, na.rm=TRUE)
 do_sd_surfaceaug=sd(surfaceaug$DO_mgl, na.rm=TRUE)
 
 #range
-do_range_bottomjuly=range(bottomaug$DO_mgl, na.rm=TRUE) 
-do_range_surfacejuly=range(surfaceaug$DO_mgl, na.rm=TRUE)
+do_range_bottomaug=range(bottomaug$DO_mgl, na.rm=TRUE) 
+do_range_surfaceaug=range(surfaceaug$DO_mgl, na.rm=TRUE)
 
 # pH ####
 #mean
@@ -901,7 +902,7 @@ temp_range_bottomaug=range(bottomaug$Temperature_F, na.rm=TRUE)
 temp_range_surfaceaug=range(surfaceaug$Temperature_F, na.rm=TRUE)
 
 
-# Moving Mean using Zoo Pkg #### Same as in July report, but adapted for August data!
+# Moving Mean using Zoo Pkg ####
 # Writing a loop for a 12-hour moving mean 
 library(zoo)
 #we first specify which columns we want to process. 
@@ -960,7 +961,7 @@ DO_aug=ggplot() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 # pH 12#
 pH_aug = ggplot()+
-  geom_line(data=bottomaug1, aes(x = datetime, y = pH_moving_mean_12hr, color="Bottom")) +
+  geom_line(data=bottomaug1, aes(x = datetime, y = corrected_pH_moving_mean_12hr, color="Bottom"), linetype="dotted") +
   geom_line(data=surfaceaug1, aes(x = datetime, y = pH_moving_mean_12hr, color="Surface")) +
   scale_color_manual(name="Sensor", values = c("Bottom" = "purple4", "Surface" = "orange")) +
   labs(title = paste("pH from July 17 to August 16 2024" ),x = "Date", y = "pH") +
@@ -974,3 +975,100 @@ Temp_aug = ggplot()+
   labs(title = paste("Temperature from July 17 to August 16 2024" ),x = "Date", y = "Temperature, ºF") +
   theme_classic()+
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+# bottom ph with you bottle value, and then use you ph vs do curve to cross check 
+# your adjusted ph value. I agree with you it shifts about 1 unit!
+  setwd("~/SURFO") # set the working directory to be able to pull the bottle data 
+  library(lubridate)
+  bottom_co2sys=read.csv("bottom_CO2SYS.csv") # open the bottle data csv for BOTTOM data
+  
+  bottom_co2sys=bottom_co2sys %>%
+    mutate(Date=dmy(Date))
+
+  
+  # Extract the month from the DateTime column and add it as a new column called Month
+  bottom_co2sys=bottom_co2sys %>%
+    mutate(Month = month(Date, label = TRUE))
+
+# Make a new variable called DeltaTAjune which is the average DeltaTA calculated by Pimenta method 
+# for only the month of June (a warm month)
+bottom_co2sys_jul=subset(bottom_co2sys,Month=='Jul')
+
+
+bottom_co2sys_jul=bottom_co2sys_jul %>%
+  mutate(datetime = as.POSIXct(paste(Date, Time), format = "%Y-%m-%d %H:%M:%S"))
+bottom_co2sys_jul=bottom_co2sys_jul %>%
+  mutate(year = lubridate::year(Date))
+bottom_co2sys_jul=bottom_co2sys_jul %>%
+  filter(year != 2023)
+
+# pH Calc is on NBS pH scale, so is the IS Sensor
+
+# mean calculated pH from July 23
+
+mean_pH_calc=8.387202 - ((7.725653+7.749403)/2)
+
+
+# difference between measured (In Situ) and calculated pH
+
+bottomaug1$corrected_pH_moving_mean_12hr=bottomaug1$pH_moving_mean_12hr-mean_pH_calc
+
+ggplot()+
+  geom_line(data=bottomaug1,aes(x = datetime, y = pH_moving_mean_12hr))+
+  geom_line(data = bottomaug1, aes(x = datetime, y = corrected_pH_moving_mean_12hr), linetype = "dotted") +
+  geom_point(data=bottom_co2sys_jul,aes(x=datetime, y=pHcalc, color="Calculated"))+
+  scale_color_manual(name="Measurement", values = c("Calculated"="green4", "Lab"="red", "In-Situ"="blue"))+
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+ggplot() +
+  geom_line(data = bottomaug1, aes(x = datetime, y = corrected_pH_moving_mean_12hr), linetype = "dashed") +  # specify linetype outside aes
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+
+ggplot()+
+  geom_point(data=bottomaug1, aes(x=DO_mgl_moving_mean_12hr, y=corrected_pH_moving_mean_12hr), position = "jitter")+
+  geom_smooth(data = bottomaug1, aes(x = DO_mgl_moving_mean_12hr, y = corrected_pH_moving_mean_12hr), method = "lm", color = "orange", se = FALSE)
+
+
+## Check pH salinity correlation ####
+
+ggplot() +
+  # Add barnacles data
+  geom_point(data = barnacles, aes(x = DO_mgl, y = pH), position = "jitter", size = 0.5, color = "red") +
+  geom_smooth(data = barnacles, aes(x = DO_mgl, y = pH), method = "lm", color = "red", se = FALSE) +
+  stat_poly_eq(data = barnacles, aes(x = DO_mgl, y = pH, label = ..rr.label..), 
+               formula = y ~ x, parse = TRUE, color = "red") +
+  # Add surface data before 
+  geom_point(data = surface, aes(x = DO_mgl, y = pH), position = "jitter", size = 0.5, color = "blue") +
+  geom_smooth(data = surface, aes(x = DO_mgl, y = pH), method = "lm", color = "blue", se = FALSE) +
+  stat_poly_eq(data = surface, aes(x = DO_mgl, y = pH, label = paste(..rr.label..)), 
+               formula = y ~ x, parse = TRUE, color = "blue", label.x = 5, label.y = 8) +
+  # add surface data after
+  geom_point(data = cleaned, aes(x = DO_mgl, y = pH), position = "jitter", size = 0.5, color = "forestgreen") +
+  geom_smooth(data = cleaned, aes(x = DO_mgl, y = pH), method = "lm", color = "forestgreen", se = FALSE) +
+  stat_poly_eq(data = cleaned, aes(x = DO_mgl, y = pH, label = paste(..rr.label..)), 
+               formula = y ~ x, parse = TRUE, color = "forestgreen", label.x = -5, label.y = 8) +
+  # add cleaned data to check r2
+  geom_point(data = surfacejuly1, aes(x = DO_mgl, y = pH), position = "jitter", size = 0.5, color = "orange") +
+  geom_smooth(data = surfacejuly1, aes(x = DO_mgl, y = pH), method = "lm", color = "orange", se = FALSE) +
+  stat_poly_eq(data = surfacejuly1, aes(x = DO_mgl, y = pH, label = paste(..rr.label..)), 
+               formula = y ~ x, parse = TRUE, color = "orange", label.x = -5, label.y = -0.5) +
+  # add August Data
+  ggplot()+
+  geom_point(data=bottomaug1, aes(x=DO_mgl_moving_mean_12hr, y=corrected_pH_moving_mean_12hr), position = "jitter")+
+  geom_smooth(data = bottomaug1, aes(x = DO_mgl_moving_mean_12hr, y = corrected_pH_moving_mean_12hr), method = "lm", color = "orange", se = FALSE)+
+
+  
+  # Add labels and theme
+  labs(title = "DO and pH correlation", x = "Dissolved Oxygen (mg/L)", y = "pH") +
+  theme_classic()
+###
+####################################
+ggplot()+
+  geom_point(data=bottom1, aes(x=DO_mgl, y=pH), position = "jitter", color="forestgreen")+
+  geom_point(data=bottomjuly1, aes(x=DO_mgl, y=pH_moving_mean_12hr), position="jitter", color="orange")+
+  geom_point(data=bottomaug1, aes(x=DO_mgl_moving_mean_12hr, y=corrected_pH_moving_mean_12hr), position = "jitter", color="red")+
+  geom_smooth()
+  
