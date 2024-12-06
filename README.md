@@ -4,6 +4,8 @@ The code in CO2SYS_Analysis.R is used for the carbonate system chemistry that I 
 as well as CO2 flux, however the CO2 flux is partially calcuated in Matlab so at present there is a lot of swapping between R and Matlab during these analyses. I am hoping to convert 
 some of these matlab scripts into R so they can be used in R as well so we do not have to switch programming languages, and to make an accessible package for future use. 
 
+Additionally, my analyses and data visualization codes used for my AGU presentation are included in this repository. 
+
 The authors of each script are listed in the comments at the top of each script. 
 
 
